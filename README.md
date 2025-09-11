@@ -1,71 +1,73 @@
 # Firebase Push Notifications Demo
 
-A complete Firebase Cloud Messaging (FCM) push notifications demo application with Node.js backend and modern web frontend.
+A complete Firebase Cloud Messaging (FCM) push notifications demo application with React + Vite frontend and Node.js backend.
 
 ## Features
 
 - 🔔 Real-time push notifications using Firebase Cloud Messaging
-- 🌐 Modern web interface for receiving notifications
-- 🚀 Admin panel for sending notifications to all connected devices
+- ⚛️ Modern React + Vite frontend with beautiful UI
+- 🚀 Node.js backend with Express and Firebase Admin SDK
 - 📱 Service worker for background notifications
 - 📊 Real-time statistics and notification history
-- 🎨 Beautiful, responsive UI with modern design
+- 🎨 Responsive design with modern styling
+- 🔧 Demo mode that works without full Firebase setup
 
-## Setup Instructions
+## Project Structure
 
-### 1. Firebase Project Setup
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project or select existing project
-3. Enable Cloud Messaging in your Firebase project
-4. Generate a new private key for your service account:
-   - Go to Project Settings > Service Accounts
-   - Click "Generate new private key"
-   - Save the JSON file as `sample-60237-firebase-adminsdk-fbsvc-949de5baae.json` in the project root
-
-### 2. Web App Configuration
-
-1. In Firebase Console, go to Project Settings > General
-2. Add a web app to your project
-3. Copy the Firebase configuration object
-4. Update the `firebaseConfig` in both:
-   - `public/index.html` (around line 120)
-   - `public/firebase-messaging-sw.js` (around line 5)
-
-### 3. VAPID Key Setup
-
-1. In Firebase Console, go to Project Settings > Cloud Messaging
-2. Generate a new Web Push certificate (VAPID key)
-3. Update the `vapidKey` in `public/index.html` (around line 140)
-
-### 4. Install Dependencies
-
-```bash
-npm install
+```
+├── client/                    # React + Vite frontend
+│   ├── src/
+│   │   ├── components/        # React components
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── firebase/         # Firebase configuration
+│   │   └── ...
+│   ├── public/
+│   │   └── firebase-messaging-sw.js  # Service worker
+│   └── package.json
+├── server/                    # Node.js backend
+│   ├── server.js             # Express server
+│   ├── package.json
+│   └── sample-60237-firebase-adminsdk-*.json
+├── public/                    # Legacy admin panel
+│   └── admin.html
+└── package.json              # Root package.json with scripts
 ```
 
-### 5. Start the Server
+## Quick Start
+
+### 1. Install Dependencies
 
 ```bash
-npm start
+npm run install-all
 ```
 
-The application will be available at:
-- Main app: http://localhost:3000
-- Admin panel: http://localhost:3000/admin
+### 2. Start Development Servers
+
+```bash
+npm run dev
+```
+
+This will start:
+- React client on http://localhost:5173
+- Node.js server on http://localhost:3001
+
+### 3. Access the Application
+
+- **Main App**: http://localhost:5173
+- **Admin Panel**: http://localhost:3001/admin
 
 ## Usage
 
 ### For Users (Receiving Notifications)
 
-1. Open http://localhost:3000 in your browser
+1. Open http://localhost:5173 in your browser
 2. Click "Enable Notifications" and allow notification permissions
-3. Your device will be registered and ready to receive notifications
-4. The FCM token will be displayed and registered with the server
+3. Your device will be registered with a demo token
+4. The token will be displayed and registered with the server
 
 ### For Admins (Sending Notifications)
 
-1. Open http://localhost:3000/admin in your browser
+1. Open http://localhost:3001/admin in your browser
 2. See the number of connected devices
 3. Fill in the notification title and body
 4. Optionally add custom data in JSON format
@@ -77,47 +79,62 @@ The application will be available at:
 - `POST /api/send-notification` - Send notification to all registered tokens
 - `GET /api/tokens` - Get registered tokens count
 
-## File Structure
+## Scripts
 
-```
-├── server.js                          # Node.js server with Firebase Admin SDK
-├── package.json                       # Dependencies and scripts
-├── sample-60237-firebase-adminsdk-*.json  # Firebase service account key
-├── public/
-│   ├── index.html                     # Main app interface
-│   ├── admin.html                     # Admin panel for sending notifications
-│   └── firebase-messaging-sw.js      # Service worker for background notifications
-└── README.md                          # This file
-```
+- `npm run dev` - Start both client and server in development mode
+- `npm run client` - Start only the React client
+- `npm run server` - Start only the Node.js server
+- `npm run build` - Build the React client for production
+- `npm start` - Start the production server
+- `npm run install-all` - Install dependencies for all projects
+
+## Firebase Configuration (Optional)
+
+For full Firebase integration, update the configuration in:
+
+1. `client/src/firebase/config.js` - Client-side Firebase config
+2. `client/public/firebase-messaging-sw.js` - Service worker config
+3. `server/sample-60237-firebase-adminsdk-*.json` - Server-side service account
+
+### Firebase Setup Steps
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project or select existing project
+3. Enable Cloud Messaging in your Firebase project
+4. Generate a new private key for your service account
+5. Add a web app to your project and copy the configuration
+6. Generate a VAPID key for web push notifications
+
+## Demo Mode
+
+The application includes a demo mode that works without full Firebase configuration:
+- Generates mock FCM tokens for testing
+- Simulates push notification functionality
+- Perfect for development and demonstration purposes
 
 ## Important Notes
 
 ⚠️ **Security**: This demo stores FCM tokens in memory. In production, use a proper database and implement proper authentication for the admin panel.
 
-⚠️ **Configuration**: Make sure to update all Firebase configuration values with your actual project details.
-
 ⚠️ **HTTPS**: For production deployment, ensure your app is served over HTTPS as required by service workers and push notifications.
 
-## Testing
-
-1. Start the server: `npm start`
-2. Open the main app and enable notifications
-3. Open the admin panel in another tab
-4. Send a test notification from the admin panel
-5. You should receive the notification in the main app
+⚠️ **CORS**: The server is configured to allow requests from localhost:5173 and localhost:3000.
 
 ## Troubleshooting
 
-- **Notifications not working**: Check browser console for errors and ensure all Firebase configuration is correct
-- **Service worker issues**: Make sure the service worker is registered and Firebase config is updated
-- **Token registration fails**: Verify the server is running and the API endpoints are accessible
+- **Port conflicts**: Make sure ports 5173 and 3001 are available
+- **CORS issues**: Check that the server CORS configuration includes your client URL
+- **Service worker issues**: Ensure the service worker is properly registered
+- **Token registration fails**: Verify the server is running and accessible
 
 ## Production Deployment
 
 For production deployment:
-1. Use environment variables for sensitive configuration
-2. Implement proper database for token storage
-3. Add authentication for admin panel
-4. Use HTTPS
-5. Implement proper error handling and logging
-# firebase-push-notifications-demo
+
+1. Build the React client: `npm run build`
+2. Update server to serve the built client files
+3. Use environment variables for sensitive configuration
+4. Implement proper database for token storage
+5. Add authentication for admin panel
+6. Use HTTPS
+7. Implement proper error handling and logging

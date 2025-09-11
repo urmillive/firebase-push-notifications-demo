@@ -1,0 +1,29 @@
+{
+  "name": "push-notifications-demo",
+  "version": "1.0.0",
+  "description": "Firebase Push Notifications Demo with React + Node.js",
+  "main": "server/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm start",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": [
+    "firebase",
+    "push-notifications",
+    "react",
+    "nodejs",
+    "demo"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "firebase": "^12.2.1"
+  }
+}

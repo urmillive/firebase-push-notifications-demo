@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Push Notifications Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-indicator.connected {
+            background-color: #28a745;
+        }
+        
+        .status-indicator.disconnected {
+            background-color: #dc3545;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .notification-log {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .notification-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .notification-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .notification-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .notification-body {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .notification-time {
+            font-size: 0.9em;
+            color: #999;
+        }
+        
+        .admin-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .admin-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .admin-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .token-display {
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 Push Notifications Demo</h1>
+            <p>Firebase Cloud Messaging Integration</p>
+        </div>
+        
+        <div class="status-card">
+            <h3><span id="status-indicator" class="status-indicator disconnected"></span>Connection Status</h3>
+            <p id="status-text">Initializing Firebase...</p>
+        </div>
+        
+        <div style="text-align: center;">
+            <button id="enable-notifications" class="btn" disabled>Enable Notifications</button>
+            <button id="test-notification" class="btn" disabled>Test Local Notification</button>
+        </div>
+        
+        <div id="token-section" style="display: none;">
+            <h3>FCM Token:</h3>
+            <div id="token-display" class="token-display"></div>
+        </div>
+        
+        <div class="notification-log">
+            <h3>📋 Notification Log</h3>
+            <div id="notification-list">
+                <p style="color: #999; text-align: center; padding: 20px;">No notifications received yet</p>
+            </div>
+        </div>
+        
+        <div class="admin-link">
+            <a href="/admin" target="_blank">🚀 Open Admin Panel to Send Notifications</a>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js';
+
+        // Firebase configuration - Update these values with your actual Firebase project config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDemoKey-Replace-With-Your-Actual-API-Key",
+            authDomain: "sample-60237.firebaseapp.com",
+            projectId: "sample-60237",
+            storageBucket: "sample-60237.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef123456789"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const messaging = getMessaging(app);
+
+        // DOM elements
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const enableBtn = document.getElementById('enable-notifications');
+        const testBtn = document.getElementById('test-notification');
+        const tokenSection = document.getElementById('token-section');
+        const tokenDisplay = document.getElementById('token-display');
+        const notificationList = document.getElementById('notification-list');
+
+        // Update status
+        function updateStatus(connected, message) {
+            statusIndicator.className = `status-indicator ${connected ? 'connected' : 'disconnected'}`;
+            statusText.textContent = message;
+            enableBtn.disabled = !connected;
+            testBtn.disabled = !connected;
+        }
+
+        // Add notification to log
+        function addNotificationToLog(title, body, data = {}) {
+            const notificationItem = document.createElement('div');
+            notificationItem.className = 'notification-item';
+            
+            const time = new Date().toLocaleTimeString();
+            notificationItem.innerHTML = `
+                <div class="notification-title">${title}</div>
+                <div class="notification-body">${body}</div>
+                <div class="notification-time">Received at ${time}</div>
+            `;
+            
+            // Clear "no notifications" message
+            if (notificationList.children.length === 1 && notificationList.children[0].tagName === 'P') {
+                notificationList.innerHTML = '';
+            }
+            
+            notificationList.insertBefore(notificationItem, notificationList.firstChild);
+        }
+
+        // Register FCM token with server
+        async function registerToken(token) {
+            try {
+                const response = await fetch('/api/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token }),
+                });
+                
+                const result = await response.json();
+                console.log('Token registered:', result);
+                return result.success;
+            } catch (error) {
+                console.error('Error registering token:', error);
+                return false;
+            }
+        }
+
+        // Initialize messaging (simplified demo version)
+        async function initializeMessaging() {
+            try {
+                updateStatus(false, 'Requesting notification permission...');
+                
+                // Request notification permission
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    updateStatus(false, 'Notification permission denied');
+                    return;
+                }
+
+                // Generate a demo token for testing
+                const demoToken = 'demo_token_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+                console.log('Demo FCM Token:', demoToken);
+                tokenDisplay.textContent = demoToken;
+                tokenSection.style.display = 'block';
+                
+                // Register token with server
+                const registered = await registerToken(demoToken);
+                if (registered) {
+                    updateStatus(true, 'Connected and ready to receive notifications (Demo Mode)');
+                } else {
+                    updateStatus(false, 'Failed to register with server');
+                }
+
+                // For demo purposes, we'll simulate receiving messages via server-sent events
+                // In a real app, this would be handled by Firebase messaging
+                console.log('Demo mode: Firebase messaging initialized with mock token');
+                
+                // Start polling for demo notifications (simulate real-time notifications)
+                startNotificationPolling();
+
+            } catch (error) {
+                console.error('Error initializing messaging:', error);
+                updateStatus(false, `Error: ${error.message}`);
+            }
+        }
+
+        // Simple polling mechanism for demo notifications
+        function startNotificationPolling() {
+            // This simulates receiving notifications in demo mode
+            // In production, Firebase handles this automatically
+            window.demoNotificationReceiver = (title, body) => {
+                addNotificationToLog(title, body);
+                
+                // Show browser notification
+                if (Notification.permission === 'granted') {
+                    new Notification(title, {
+                        body: body,
+                        icon: '/favicon.ico'
+                    });
+                }
+            };
+        }
+
+        // Event listeners
+        enableBtn.addEventListener('click', initializeMessaging);
+
+        testBtn.addEventListener('click', () => {
+            if (Notification.permission === 'granted') {
+                const notification = new Notification('Test Notification', {
+                    body: 'This is a test notification from your browser!',
+                    icon: '/favicon.ico'
+                });
+                
+                addNotificationToLog('Test Notification', 'This is a test notification from your browser!');
+            }
+        });
+
+        // Initialize on page load
+        updateStatus(false, 'Click "Enable Notifications" to start');
+        
+        // Check if service worker is supported
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                .then((registration) => {
+                    console.log('Service Worker registered:', registration);
+                })
+                .catch((error) => {
+                    console.error('Service Worker registration failed:', error);
+                });
+        }
+    </script>
+</body>
+</html>
