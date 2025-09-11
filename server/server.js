@@ -15,6 +15,9 @@ admin.initializeApp({
 // Store FCM tokens (in production, use a database)
 const tokenArray = [];
 
+// Store pending notifications for demo mode
+const pendingNotifications = new Map(); // token -> array of notifications
+
 // Middleware
 app.use(express.json());
 app.use(cors({
@@ -64,6 +67,41 @@ app.post("/api/send-notification", async (req, res) => {
     return res.status(400).json({ error: "No tokens registered" });
   }
   
+  // Check if we're in demo mode (tokens start with "demo_")
+  const isDemoMode = tokenArray.some(token => token.startsWith('demo_'));
+  
+  if (isDemoMode) {
+    // Demo mode: simulate notification sending
+    console.log("Demo mode: Simulating notification send to", tokenArray.length, "tokens");
+    console.log("Title:", title, "Body:", body);
+    
+    // Add notification to each token's queue
+    tokenArray.forEach(token => {
+      if (!pendingNotifications.has(token)) {
+        pendingNotifications.set(token, []);
+      }
+      pendingNotifications.get(token).push({
+        title,
+        body,
+        data: data || {},
+        timestamp: Date.now()
+      });
+    });
+    
+    // Simulate successful delivery to all demo tokens
+    res.json({
+      success: true,
+      successCount: tokenArray.length,
+      failureCount: 0,
+      totalTokens: tokenArray.length,
+      message: "Demo notification sent successfully",
+      isDemoMode: true
+    });
+    
+    return;
+  }
+  
+  // Real Firebase mode
   const message = {
     notification: {
       title: title,
@@ -115,6 +153,26 @@ app.get("/api/tokens", (req, res) => {
   res.json({ 
     totalTokens: tokenArray.length,
     tokens: tokenArray 
+  });
+});
+
+// Poll for new notifications (demo mode)
+app.post("/api/poll-notifications", (req, res) => {
+  const { token } = req.body;
+  
+  if (!token) {
+    return res.status(400).json({ error: "Token is required" });
+  }
+  
+  // Get pending notifications for this token
+  const notifications = pendingNotifications.get(token) || [];
+  
+  // Clear the notifications after sending
+  pendingNotifications.set(token, []);
+  
+  res.json({ 
+    notifications,
+    count: notifications.length 
   });
 });
 
